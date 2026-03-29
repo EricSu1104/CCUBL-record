@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中正大學聯盟賽戰績系統</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Microsoft JhengHei','微軟正黑體',Arial,sans-serif; background:#0f1629; color:#e8eaf0; min-height:100vh; }
+
+        header { background:linear-gradient(135deg,#1a237e,#283593); padding:16px 28px; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid #ffd600; box-shadow:0 2px 16px rgba(0,0,0,.5); gap:12px; flex-wrap:wrap; }
+        header h1 { font-size:1.5rem; font-weight:700; color:#ffd600; letter-spacing:2px; }
+        .header-sub { font-size:.85rem; color:#90caf9; }
+        .viewer-link { padding:6px 16px; border-radius:20px; border:1px solid rgba(255,214,0,.5); background:rgba(255,214,0,.1); color:#ffd600; text-decoration:none; font-size:.82rem; font-weight:600; white-space:nowrap; transition:all .15s; }
+        .viewer-link:hover { background:rgba(255,214,0,.2); }
+        .share-btn { padding:6px 16px; border-radius:20px; border:1px solid rgba(144,202,249,.4); background:rgba(144,202,249,.1); color:#90caf9; font-size:.82rem; font-weight:600; white-space:nowrap; cursor:pointer; font-family:inherit; transition:all .15s; }
+        .share-btn:hover { background:rgba(144,202,249,.2); }
+        /* Share modal */
+        .share-modal-box { max-width:520px; }
+        .share-url-wrap { background:#0f1629; border:1px solid #2e3660; border-radius:8px; padding:10px 14px; font-size:.78rem; color:#90caf9; word-break:break-all; max-height:100px; overflow-y:auto; margin-bottom:10px; line-height:1.5; }
+        .share-hint { font-size:.78rem; color:#546e7a; margin-bottom:16px; line-height:1.6; }
+        .share-qr { display:flex; justify-content:center; margin-bottom:14px; }
+        .share-qr canvas { border-radius:8px; }
+
+        /* ── Bars ── */
+        .top-bar { background:#141829; padding:10px 28px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #2a3050; flex-wrap:wrap; }
+        .bar-label { font-size:.8rem; color:#78909c; margin-right:4px; white-space:nowrap; }
+
+        .tab-btn { padding:5px 16px; border-radius:20px; border:1px solid #3a4070; background:#1a1f3a; color:#90caf9; cursor:pointer; font-size:.85rem; font-family:inherit; font-weight:600; transition:all .15s; }
+        .tab-btn:hover { background:#2a3060; }
+        .tab-btn.active { background:#ffd600; color:#1a1a2e; border-color:#ffd600; }
+
+        .add-tab-btn { padding:5px 14px; border-radius:20px; border:1px dashed #3a4070; background:transparent; color:#4a5080; cursor:pointer; font-size:.82rem; font-family:inherit; transition:all .15s; }
+        .add-tab-btn:hover { color:#90caf9; border-color:#5c6bc0; }
+
+        .mode-bar { background:#0d1122; padding:8px 28px; display:flex; gap:0; border-bottom:1px solid #2a3050; }
+        .mode-btn { padding:7px 24px; border:none; border-bottom:2px solid transparent; background:transparent; color:#546e7a; cursor:pointer; font-size:.9rem; font-family:inherit; font-weight:600; transition:all .15s; }
+        .mode-btn.active { color:#ffd600; border-bottom-color:#ffd600; }
+        .mode-btn:hover { color:#90caf9; }
+
+        .round-bar { background:#0a0f20; padding:7px 28px; display:flex; gap:4px; border-bottom:1px solid #2a3050; flex-wrap:wrap; }
+        .round-btn { padding:5px 18px; border-radius:6px; border:1px solid transparent; background:transparent; color:#546e7a; cursor:pointer; font-size:.85rem; font-family:inherit; font-weight:600; transition:all .15s; }
+        .round-btn.active { background:#1a1f3a; color:#e8eaf0; border-color:#3a4070; }
+        .round-btn:hover { color:#90caf9; }
+
+        .actions-bar { background:#141829; padding:12px 28px; display:flex; gap:10px; border-bottom:1px solid #2a3050; flex-wrap:wrap; }
+
+        /* ── Buttons ── */
+        .btn { padding:8px 20px; border:none; border-radius:6px; cursor:pointer; font-size:.88rem; font-family:inherit; font-weight:600; transition:all .18s; }
+        .btn-primary { background:#ffd600; color:#1a1a2e; }
+        .btn-primary:hover { background:#ffe740; transform:translateY(-1px); box-shadow:0 4px 12px rgba(255,214,0,.35); }
+        .btn-secondary { background:#1e2540; color:#c5cae9; border:1px solid #3a4070; }
+        .btn-secondary:hover { background:#2a3060; }
+        .btn-sm { padding:4px 10px; font-size:.78rem; }
+        .btn-danger { background:#c62828; color:#fff; }
+        .btn-danger:hover { background:#e53935; }
+
+        /* ── Main ── */
+        .main-content { padding:20px 28px; display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:1400px; margin:0 auto; }
+        @media(max-width:860px){ .main-content{ grid-template-columns:1fr; } }
+
+        /* ── Division ── */
+        .division-section { background:#1a1f3a; border-radius:12px; overflow:hidden; border:1px solid #2a3050; box-shadow:0 4px 20px rgba(0,0,0,.3); }
+        .division-header { padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+        .division-header.east { background:linear-gradient(135deg,#1b5e20,#2e7d32); border-bottom:2px solid #66bb6a; }
+        .division-header.west { background:linear-gradient(135deg,#b71c1c,#c62828); border-bottom:2px solid #ef5350; }
+        .division-header.groupA { background:linear-gradient(135deg,#1a237e,#283593); border-bottom:2px solid #5c6bc0; }
+        .division-header.groupB { background:linear-gradient(135deg,#4a148c,#6a1b9a); border-bottom:2px solid #ab47bc; }
+        .division-title { font-size:1.2rem; font-weight:700; color:#fff; letter-spacing:3px; }
+        .div-info { display:flex; align-items:center; gap:8px; }
+        .team-count { font-size:.75rem; color:rgba(255,255,255,.6); }
+
+        /* ── Table ── */
+        .standings-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+        .standings-table thead th { background:#0d1025; color:#78909c; padding:8px 10px; text-align:center; font-weight:600; font-size:.82rem; border-bottom:1px solid #2a3050; white-space:nowrap; }
+        .standings-table thead th.left { text-align:left; }
+        .standings-table tbody tr { border-bottom:1px solid #1e2540; transition:background .12s; }
+        .standings-table tbody tr:hover { background:rgba(255,255,255,.035); }
+        .standings-table tbody tr.cutoff-line { border-bottom:2px dashed #ffd600 !important; }
+        .standings-table tbody td { padding:9px 10px; text-align:center; white-space:nowrap; }
+        .standings-table tbody td.left { text-align:left; }
+        .team-name-cell { display:flex; align-items:center; gap:7px; font-weight:600; }
+        .status-badge { font-size:.68rem; padding:2px 6px; border-radius:10px; font-weight:700; white-space:nowrap; }
+        .status-clinched  { background:#1b5e20; color:#a5d6a7; border:1px solid #388e3c; }
+        .status-eliminated { background:#7f0000; color:#ffcdd2; border:1px solid #c62828; }
+        .rank-cell { color:#546e7a; font-size:.85rem; }
+        .medal-gold   { color:#ffd600; font-weight:700; }
+        .medal-silver { color:#b0bec5; font-weight:700; }
+        .medal-bronze { color:#a1887f; font-weight:700; }
+        .win-color  { color:#66bb6a; font-weight:700; }
+        .loss-color { color:#ef5350; }
+        .gb-color   { color:#90a4ae; }
+        .playoff-note { font-size:.72rem; color:#ffd600; padding:4px 18px 6px; background:rgba(255,214,0,.06); border-bottom:1px solid #2a3050; }
+        .empty-state { padding:36px; text-align:center; color:#3a4570; }
+        .empty-title { font-size:.95rem; margin-top:8px; }
+
+        /* ── Matchup Cards (R1, Semis, Finals) ── */
+        .matchup-section-title { font-size:.85rem; color:#78909c; padding:14px 20px 8px; font-weight:600; letter-spacing:.5px; }
+        .matchup-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:12px 16px 16px; }
+        @media(max-width:700px){ .matchup-grid{ grid-template-columns:1fr; } }
+        .matchup-card { background:#0f1629; border:1px solid #2a3050; border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; cursor:pointer; transition:border-color .15s, background .15s; }
+        .matchup-card:hover { border-color:#5c6bc0; background:#121828; }
+        .matchup-card.played { border-color:#1e2a40; }
+        .matchup-card.played:hover { border-color:#5c6bc0; }
+        .matchup-card.no-teams { cursor:default; opacity:.6; }
+        .matchup-card.no-teams:hover { border-color:#2a3050; background:#0f1629; }
+        .matchup-side { text-align:center; }
+        .match-seed { font-size:.7rem; color:#78909c; margin-bottom:3px; }
+        .match-team { font-size:.92rem; font-weight:600; }
+        .match-team.pending { color:#4a5080; font-style:italic; }
+        .match-team.winner { color:#66bb6a; }
+        .match-team.loser  { color:#ef5350; }
+        .match-center { text-align:center; }
+        .match-score { font-size:1.3rem; font-weight:700; color:#ffd600; min-width:72px; }
+        .match-score.pending { font-size:.85rem; color:#4a5080; }
+        .match-label { font-size:.7rem; color:#78909c; margin-top:4px; }
+
+        /* ── Round 2 ── */
+        .r2-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:16px; }
+        @media(max-width:860px){ .r2-grid{ grid-template-columns:1fr; } }
+        .r2-group-section { background:#1a1f3a; border-radius:10px; overflow:hidden; border:1px solid #2a3050; }
+        .r2-group-header { padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
+        .r2-group-header.groupA { background:linear-gradient(135deg,#1a237e,#283593); border-bottom:2px solid #5c6bc0; }
+        .r2-group-header.groupB { background:linear-gradient(135deg,#4a148c,#6a1b9a); border-bottom:2px solid #ab47bc; }
+        .r2-group-title { font-size:1.1rem; font-weight:700; color:#fff; letter-spacing:2px; }
+        .r2-game-log { border-top:1px solid #1e2540; }
+        .r2-game-item { display:flex; align-items:center; justify-content:space-between; padding:7px 14px; border-bottom:1px solid #1e2540; font-size:.83rem; gap:10px; }
+        .r2-game-item:last-child { border-bottom:none; }
+
+        /* ── Standalone card (finals) ── */
+        .finals-wrap { padding:24px; display:flex; justify-content:center; }
+        .finals-wrap .matchup-card { max-width:500px; width:100%; }
+
+        /* ── Game Log ── */
+        .game-log-section { grid-column:1/-1; background:#1a1f3a; border-radius:12px; border:1px solid #2a3050; overflow:hidden; }
+        .game-log-header { background:#141829; padding:11px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #2a3050; }
+        .game-log-header h3 { font-size:.95rem; color:#90caf9; }
+        .game-log-body { max-height:300px; overflow-y:auto; }
+        .game-item { display:flex; align-items:center; justify-content:space-between; padding:9px 18px; border-bottom:1px solid #1e2540; font-size:.86rem; gap:12px; }
+        .game-item:last-child { border-bottom:none; }
+        .game-item-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .game-div-tag { font-size:.72rem; padding:2px 7px; border-radius:8px; background:#0f1629; color:#78909c; border:1px solid #2a3050; }
+        .g-team { font-weight:600; }
+        .g-team.winner { color:#66bb6a; }
+        .g-team.loser  { color:#ef5350; }
+        .g-score { font-weight:700; color:#ffd600; font-size:1rem; min-width:70px; text-align:center; }
+
+        /* ── Modal ── */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:1000; align-items:center; justify-content:center; }
+        .modal-overlay.active { display:flex; }
+        .modal { background:#1a1f3a; border:1px solid #3a4070; border-radius:14px; padding:28px; width:92%; max-width:460px; box-shadow:0 24px 64px rgba(0,0,0,.6); animation:modalIn .18s ease; }
+        @keyframes modalIn { from{opacity:0;transform:scale(.95) translateY(-8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+        .modal h2 { font-size:1.1rem; color:#ffd600; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid #2a3050; }
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; color:#78909c; margin-bottom:6px; font-weight:600; }
+        .form-group input, .form-group select { width:100%; background:#0f1629; border:1px solid #2e3660; color:#e8eaf0; padding:10px 14px; border-radius:6px; font-size:.9rem; font-family:inherit; }
+        .form-group input:focus, .form-group select:focus { outline:none; border-color:#5c6bc0; box-shadow:0 0 0 3px rgba(92,107,192,.2); }
+        .score-row { display:grid; grid-template-columns:1fr 32px 1fr; align-items:end; gap:8px; }
+        .vs-label { text-align:center; color:#ffd600; font-weight:700; font-size:1.1rem; padding-bottom:10px; }
+        .modal-actions { display:flex; gap:10px; margin-top:22px; justify-content:flex-end; }
+        .error-msg { color:#ef9a9a; font-size:.8rem; margin-top:6px; min-height:18px; }
+
+        /* matchup modal specific */
+        .mm-teams-row { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+        .mm-team-block { flex:1; text-align:center; }
+        .mm-seed { font-size:.75rem; color:#78909c; margin-bottom:4px; }
+        .mm-name { font-size:1rem; font-weight:700; color:#e8eaf0; }
+        .mm-name.pending { color:#4a5080; font-style:italic; }
+        .mm-score-inputs { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+        .mm-score-inputs input { width:68px; text-align:center; padding:8px; }
+        .mm-vs { color:#ffd600; font-weight:700; font-size:1.1rem; }
+
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:#0f1629; }
+        ::-webkit-scrollbar-thumb { background:#2e3660; border-radius:3px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>中正大學聯盟賽</h1>
+    <span class="header-sub">戰績管理系統</span>
+    <button class="share-btn" onclick="openShareModal()">分享給球員</button>
+</header>
+
+<div id="season-bar" class="top-bar"></div>
+<div id="mode-bar"   class="mode-bar"></div>
+<div id="round-bar"  class="round-bar" style="display:none"></div>
+<div id="actions-bar" class="actions-bar"></div>
+<div id="main-content" class="main-content"></div>
+
+<!-- ===== Modals ===== -->
+<!-- Share Modal -->
+<div class="modal-overlay" id="share-modal">
+    <div class="modal share-modal-box">
+        <h2>分享給球員</h2>
+        <div class="share-hint" style="margin-bottom:18px;font-size:.85rem;line-height:1.8;color:#c5cae9">
+            點「產生球員版網頁」會下載一個 <strong style="color:#ffd600">HTML 檔案</strong>，<br>
+            將該檔案透過 <strong>Line / Email</strong> 傳給球員，<br>
+            球員點開後直接在手機瀏覽器查看，無需安裝任何程式。
+        </div>
+        <div style="background:#0f1629;border:1px solid #2a3050;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:.78rem;color:#546e7a;line-height:1.7">
+            ⚠️ 每次更新戰績後需重新產生，球員才能看到最新資料。<br>
+            ⚠️ 若球員用 Line 開啟無法正常顯示，請選「用瀏覽器開啟」。
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('share-modal')">取消</button>
+            <button class="btn btn-primary" onclick="exportViewerHtml()">產生球員版網頁</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Team -->
+<div class="modal-overlay" id="add-team-modal">
+    <div class="modal">
+        <h2>新增球隊</h2>
+        <div class="form-group"><label>賽季 / 分區</label><div id="add-team-div-label" style="font-weight:700;color:#e8eaf0;padding:2px 0"></div></div>
+        <div class="form-group"><label for="team-name-input">球隊名稱</label><input type="text" id="team-name-input" placeholder="請輸入球隊名稱" maxlength="30"><div class="error-msg" id="add-team-error"></div></div>
+        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('add-team-modal')">取消</button><button class="btn btn-primary" onclick="addTeam()">確認新增</button></div>
+    </div>
+</div>
+
+<!-- Add Season -->
+<div class="modal-overlay" id="add-season-modal">
+    <div class="modal" style="max-width:360px">
+        <h2>新增賽季</h2>
+        <div class="form-group"><label for="season-name-input">賽季名稱</label><input type="text" id="season-name-input" placeholder="例如：26-27" maxlength="10"><div class="error-msg" id="add-season-error"></div></div>
+        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('add-season-modal')">取消</button><button class="btn btn-primary" onclick="addSeason()">確認新增</button></div>
+    </div>
+</div>
+
+<!-- Regular Season Record Game -->
+<div class="modal-overlay" id="record-game-modal">
+    <div class="modal">
+        <h2>輸入戰績</h2>
+        <div class="form-group"><label for="game-division">分區</label><select id="game-division" onchange="onDivisionChange()"><option value="east">東區</option><option value="west">西區</option></select></div>
+        <div class="form-group">
+            <div class="score-row">
+                <div><label for="game-team1">球隊甲</label><select id="game-team1" onchange="refreshTeam2()"></select></div>
+                <div class="vs-label">VS</div>
+                <div><label for="game-team2">球隊乙</label><select id="game-team2"></select></div>
+            </div>
+        </div>
+        <div class="form-group"><label>比分</label><div class="score-row"><input type="number" id="score1" placeholder="甲隊得分" min="0" max="999"><div class="vs-label">:</div><input type="number" id="score2" placeholder="乙隊得分" min="0" max="999"></div><div class="error-msg" id="record-game-error"></div></div>
+        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('record-game-modal')">取消</button><button class="btn btn-primary" onclick="recordGame()">確認輸入</button></div>
+    </div>
+</div>
+
+<!-- Playoff Matchup Score Modal (R1 / Semis / Finals) -->
+<div class="modal-overlay" id="matchup-modal">
+    <div class="modal">
+        <h2 id="mm-title">輸入成績</h2>
+        <div class="mm-teams-row">
+            <div class="mm-team-block"><div class="mm-seed" id="mm-seed1"></div><div class="mm-name" id="mm-name1"></div></div>
+            <div class="mm-score-inputs">
+                <input type="number" id="mm-score1" min="0" max="999" style="width:68px;text-align:center;padding:8px">
+                <span class="mm-vs">:</span>
+                <input type="number" id="mm-score2" min="0" max="999" style="width:68px;text-align:center;padding:8px">
+            </div>
+            <div class="mm-team-block"><div class="mm-seed" id="mm-seed2"></div><div class="mm-name" id="mm-name2"></div></div>
+        </div>
+        <div class="error-msg" id="mm-error"></div>
+        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('matchup-modal')">取消</button><button class="btn btn-primary" onclick="submitMatchupScore()">確認輸入</button></div>
+    </div>
+</div>
+
+<!-- Round 2 Game Modal -->
+<div class="modal-overlay" id="r2-game-modal">
+    <div class="modal">
+        <h2 id="r2-modal-title">輸入第二輪成績</h2>
+        <div class="form-group">
+            <div class="score-row">
+                <div><label for="r2-team1">球隊甲</label><select id="r2-team1" onchange="r2RefreshTeam2()"></select></div>
+                <div class="vs-label">VS</div>
+                <div><label for="r2-team2">球隊乙</label><select id="r2-team2"></select></div>
+            </div>
+        </div>
+        <div class="form-group"><label>比分</label><div class="score-row"><input type="number" id="r2-score1" min="0" max="999" placeholder="甲隊得分"><div class="vs-label">:</div><input type="number" id="r2-score2" min="0" max="999" placeholder="乙隊得分"></div><div class="error-msg" id="r2-error"></div></div>
+        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('r2-game-modal')">取消</button><button class="btn btn-primary" onclick="submitR2Game()">確認輸入</button></div>
+    </div>
+</div>
+
+<script type="text/x-template" id="viewer-tpl">
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f1629">
+    <title>中正大學聯盟賽 — 戰績查看</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Microsoft JhengHei','微軟正黑體',Arial,sans-serif; background:#0f1629; color:#e8eaf0; min-height:100vh; font-size:15px; }
+
+        /* ── Header ── */
+        header { background:linear-gradient(135deg,#1a237e,#283593); padding:14px 16px 12px; border-bottom:3px solid #ffd600; }
+        .header-top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+        header h1 { font-size:1.25rem; font-weight:700; color:#ffd600; letter-spacing:2px; }
+        .refresh-area { display:flex; align-items:center; gap:8px; }
+        .refresh-btn { padding:5px 12px; border-radius:16px; border:1px solid rgba(144,202,249,.4); background:rgba(144,202,249,.1); color:#90caf9; font-size:.78rem; font-family:inherit; cursor:pointer; }
+        .refresh-btn:active { background:rgba(144,202,249,.25); }
+        .last-update { font-size:.72rem; color:#546e7a; }
+        .readonly-badge { display:inline-block; background:#b71c1c; color:#ffcdd2; border-radius:8px; font-size:.68rem; padding:2px 8px; font-weight:700; letter-spacing:.5px; }
+
+        /* ── Bars ── */
+        .top-bar { background:#141829; padding:10px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #2a3050; flex-wrap:wrap; overflow-x:auto; }
+        .bar-label { font-size:.78rem; color:#78909c; white-space:nowrap; }
+        .tab-btn { padding:6px 16px; border-radius:20px; border:1px solid #3a4070; background:#1a1f3a; color:#90caf9; cursor:pointer; font-size:.85rem; font-family:inherit; font-weight:600; white-space:nowrap; }
+        .tab-btn.active { background:#ffd600; color:#1a1a2e; border-color:#ffd600; }
+
+        .mode-bar { background:#0d1122; display:flex; border-bottom:1px solid #2a3050; }
+        .mode-btn { flex:1; padding:10px; border:none; border-bottom:2px solid transparent; background:transparent; color:#546e7a; cursor:pointer; font-size:.9rem; font-family:inherit; font-weight:600; }
+        .mode-btn.active { color:#ffd600; border-bottom-color:#ffd600; }
+
+        .round-bar { background:#0a0f20; padding:8px 16px; display:flex; gap:4px; border-bottom:1px solid #2a3050; flex-wrap:wrap; }
+        .round-btn { padding:6px 14px; border-radius:6px; border:1px solid transparent; background:transparent; color:#546e7a; cursor:pointer; font-size:.83rem; font-family:inherit; font-weight:600; }
+        .round-btn.active { background:#1a1f3a; color:#e8eaf0; border-color:#3a4070; }
+
+        /* ── Search ── */
+        .search-section { padding:14px 16px 10px; background:#141829; border-bottom:1px solid #2a3050; }
+        .search-label { font-size:.8rem; color:#78909c; margin-bottom:6px; font-weight:600; }
+        .search-input-wrap { position:relative; }
+        .search-input { width:100%; background:#0f1629; border:1px solid #2e3660; color:#e8eaf0; padding:10px 14px 10px 36px; border-radius:8px; font-size:.95rem; font-family:inherit; }
+        .search-input:focus { outline:none; border-color:#5c6bc0; }
+        .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#546e7a; font-size:1rem; pointer-events:none; }
+        .search-clear { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#546e7a; cursor:pointer; font-size:1.1rem; padding:2px 4px; display:none; }
+        .search-clear.visible { display:block; }
+
+        /* ── Search Results ── */
+        .search-results { padding:12px 16px; }
+        .search-result-header { font-size:.85rem; color:#90caf9; font-weight:600; margin-bottom:10px; }
+        .search-result-header span { color:#ffd600; }
+        .game-result-card { background:#1a1f3a; border-radius:8px; padding:12px 14px; margin-bottom:8px; border:1px solid #2a3050; display:flex; align-items:center; gap:10px; }
+        .game-result-card .gr-tag { font-size:.7rem; padding:2px 7px; border-radius:8px; background:#0f1629; color:#78909c; border:1px solid #2a3050; white-space:nowrap; }
+        .gr-body { flex:1; }
+        .gr-vs { font-size:.8rem; color:#78909c; }
+        .gr-vs span { color:#e8eaf0; font-weight:600; }
+        .gr-score { font-size:1.05rem; font-weight:700; color:#ffd600; }
+        .gr-date { font-size:.72rem; color:#4a5080; }
+        .gr-result { font-size:.75rem; padding:2px 8px; border-radius:10px; font-weight:700; white-space:nowrap; }
+        .gr-win  { background:#1b5e20; color:#a5d6a7; border:1px solid #388e3c; }
+        .gr-loss { background:#7f0000; color:#ffcdd2; border:1px solid #c62828; }
+        .search-summary { font-size:.83rem; color:#546e7a; padding:8px 0 4px; text-align:center; }
+        .no-results { text-align:center; padding:24px; color:#4a5080; font-size:.9rem; }
+
+        /* ── Main Content ── */
+        .main-content { padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        @media(max-width:680px){ .main-content{ grid-template-columns:1fr; } }
+
+        /* ── Division ── */
+        .division-section { background:#1a1f3a; border-radius:10px; overflow:hidden; border:1px solid #2a3050; }
+        .division-header { padding:12px 16px; display:flex; align-items:center; gap:8px; }
+        .division-header.east { background:linear-gradient(135deg,#1b5e20,#2e7d32); border-bottom:2px solid #66bb6a; }
+        .division-header.west { background:linear-gradient(135deg,#b71c1c,#c62828); border-bottom:2px solid #ef5350; }
+        .division-title { font-size:1.05rem; font-weight:700; color:#fff; letter-spacing:2px; }
+        .team-count { font-size:.72rem; color:rgba(255,255,255,.6); }
+
+        /* ── Table ── */
+        .standings-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .standings-table thead th { background:#0d1025; color:#78909c; padding:7px 8px; text-align:center; font-weight:600; font-size:.78rem; border-bottom:1px solid #2a3050; }
+        .standings-table thead th.left { text-align:left; }
+        .standings-table tbody tr { border-bottom:1px solid #1e2540; }
+        .standings-table tbody tr.cutoff-line { border-bottom:2px dashed #ffd600 !important; }
+        .standings-table tbody td { padding:9px 8px; text-align:center; white-space:nowrap; }
+        .standings-table tbody td.left { text-align:left; }
+        .team-name-cell { display:flex; align-items:center; gap:6px; font-weight:600; font-size:.88rem; }
+        .status-badge { font-size:.62rem; padding:2px 5px; border-radius:8px; font-weight:700; }
+        .status-clinched  { background:#1b5e20; color:#a5d6a7; border:1px solid #388e3c; }
+        .status-eliminated { background:#7f0000; color:#ffcdd2; border:1px solid #c62828; }
+        .rank-cell { color:#546e7a; font-size:.82rem; }
+        .medal-gold   { color:#ffd600; font-weight:700; }
+        .medal-silver { color:#b0bec5; font-weight:700; }
+        .medal-bronze { color:#a1887f; font-weight:700; }
+        .win-color  { color:#66bb6a; font-weight:700; }
+        .loss-color { color:#ef5350; }
+        .gb-color   { color:#90a4ae; }
+        .playoff-note { font-size:.7rem; color:#ffd600; padding:4px 14px 5px; background:rgba(255,214,0,.06); border-bottom:1px solid #2a3050; }
+        .empty-state { padding:28px; text-align:center; color:#3a4570; font-size:.9rem; }
+
+        /* ── Matchup Cards ── */
+        .matchup-section-title { font-size:.82rem; color:#78909c; padding:12px 14px 6px; font-weight:600; letter-spacing:.5px; }
+        .matchup-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px 12px 14px; }
+        @media(max-width:520px){ .matchup-grid{ grid-template-columns:1fr; } }
+        .matchup-card { background:#0f1629; border:1px solid #2a3050; border-radius:10px; padding:14px 10px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:6px; }
+        .matchup-card.played { border-color:#1e2a40; }
+        .matchup-side { text-align:center; }
+        .match-seed { font-size:.68rem; color:#78909c; margin-bottom:3px; }
+        .match-team { font-size:.88rem; font-weight:600; }
+        .match-team.pending { color:#4a5080; font-style:italic; font-size:.8rem; }
+        .match-team.winner { color:#66bb6a; }
+        .match-team.loser  { color:#ef5350; }
+        .match-center { text-align:center; }
+        .match-score { font-size:1.2rem; font-weight:700; color:#ffd600; min-width:64px; }
+        .match-score.pending { font-size:.82rem; color:#4a5080; }
+        .match-label { font-size:.66rem; color:#78909c; margin-top:3px; }
+
+        /* ── Round 2 ── */
+        .r2-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:0; }
+        @media(max-width:680px){ .r2-grid{ grid-template-columns:1fr; } }
+        .r2-group-section { background:#1a1f3a; border-radius:10px; overflow:hidden; border:1px solid #2a3050; }
+        .r2-group-header { padding:11px 14px; }
+        .r2-group-header.groupA { background:linear-gradient(135deg,#1a237e,#283593); border-bottom:2px solid #5c6bc0; }
+        .r2-group-header.groupB { background:linear-gradient(135deg,#4a148c,#6a1b9a); border-bottom:2px solid #ab47bc; }
+        .r2-group-title { font-size:1rem; font-weight:700; color:#fff; letter-spacing:2px; }
+
+        /* ── Finals ── */
+        .finals-wrap { padding:16px; display:flex; justify-content:center; }
+        .finals-wrap .matchup-card { max-width:420px; width:100%; }
+
+        /* ── Playoff Notice ── */
+        .po-notice { padding:32px 16px; text-align:center; color:#4a5080; font-size:.9rem; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width:4px; height:4px; }
+        ::-webkit-scrollbar-track { background:#0f1629; }
+        ::-webkit-scrollbar-thumb { background:#2e3660; border-radius:2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-top">
+        <h1>中正大學聯盟賽</h1>
+        <div class="refresh-area">
+            <span class="readonly-badge">查看模式</span>
+            <button class="refresh-btn" onclick="manualRefresh()">重新整理</button>
+        </div>
+    </div>
+    <div class="last-update" id="last-update-label">載入中…</div>
+</header>
+
+<div id="season-bar" class="top-bar"></div>
+<div id="mode-bar" class="mode-bar"></div>
+<div id="round-bar" class="round-bar" style="display:none"></div>
+<div id="search-area" style="display:none">
+    <div class="search-section">
+        <div class="search-label">查詢隊伍對戰紀錄</div>
+        <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="search-input" type="text" placeholder="輸入隊名關鍵字…" oninput="onSearchInput()" autocomplete="off">
+            <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+        </div>
+    </div>
+    <div id="search-results" style="display:none"></div>
+</div>
+<div id="main-content" class="main-content"></div>
+
+<!-- BAKED_STATE_PLACEHOLDER -->
+<script>
+// ============================================================
+//  STATE (read-only from localStorage)
+// ============================================================
+let state = { currentSeason:'25-26', seasons:{'25-26':{divisions:{east:[],west:[]},games:[],playoff:null}} };
+let view  = { mode:'regular', round:'round1' };
+
+// Check if data is embedded in URL hash (#d=base64...)
+function getUrlData(){
+    try{
+        const hash=location.hash;
+        const m=hash.match(/[#&]d=([^&]*)/);
+        if(m) return JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    }catch(e){}
+    return null;
+}
+
+let isUrlMode = false; // true = baked/URL data, false = localStorage
+
+function loadState(){
+    if(typeof window.__bakedState !== 'undefined' && window.__bakedState !== null){
+        isUrlMode = true;
+        state = window.__bakedState;
+        var lu=document.getElementById('last-update-label');
+        if(lu) lu.textContent='資料快照：'+new Date().toLocaleDateString('zh-TW');
+        var ra=document.getElementById('refresh-area');
+        if(ra) ra.style.display='none';
+        return;
+    }
+    const urlData = getUrlData();
+    if(urlData){
+        isUrlMode = true;
+        state = urlData;
+        document.getElementById('last-update-label').textContent = '資料來源：分享連結（此為快照，非即時資料）';
+        document.getElementById('refresh-area').style.display = 'none';
+    } else {
+        isUrlMode = false;
+        try{
+            const raw=localStorage.getItem('ccuLeague_v3');
+            if(raw) state=JSON.parse(raw);
+        }catch(e){}
+        document.getElementById('last-update-label').textContent='最後更新：'+new Date().toLocaleTimeString('zh-TW');
+    }
+}
+
+function manualRefresh(){ loadState(); renderAll(); }
+
+// Auto-refresh every 60 seconds (only in localStorage mode)
+setInterval(()=>{ if(!isUrlMode){ loadState(); renderAll(); } }, 60000);
+// Refresh on tab focus
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ loadState(); renderAll(); } });
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function season(){ return state.seasons[state.currentSeason]||{divisions:{east:[],west:[]},games:[],playoff:null}; }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getTeam(id){ const s=season(); for(const d of['east','west']){ const t=s.divisions[d].find(t=>t.id===id); if(t) return t; } return null; }
+
+// ============================================================
+//  REGULAR SEASON STATS (same as admin)
+// ============================================================
+function getTeamStats(teamId,division){
+    let wins=0,losses=0,pf=0,pa=0;
+    for(const g of season().games){
+        if(g.division!==division) continue;
+        if(g.team1Id===teamId){ pf+=g.score1;pa+=g.score2;g.score1>g.score2?wins++:losses++; }
+        else if(g.team2Id===teamId){ pf+=g.score2;pa+=g.score1;g.score2>g.score1?wins++:losses++; }
+    }
+    return {wins,losses,pf,pa};
+}
+function getGroupH2H(teamIds,division){
+    const h={}; for(const id of teamIds) h[id]={wins:0,losses:0,pf:0,pa:0};
+    for(const g of season().games){
+        if(g.division!==division) continue;
+        if(!teamIds.includes(g.team1Id)||!teamIds.includes(g.team2Id)) continue;
+        const {team1Id:t1,team2Id:t2,score1:s1,score2:s2}=g;
+        if(s1>s2){h[t1].wins++;h[t2].losses++;}else{h[t2].wins++;h[t1].losses++;}
+        h[t1].pf+=s1;h[t1].pa+=s2;h[t2].pf+=s2;h[t2].pa+=s1;
+    }
+    return h;
+}
+function getRemainingGames(teamId,division){
+    const n=season().divisions[division].length;
+    const {wins,losses}=getTeamStats(teamId,division);
+    return Math.max(0,(n-1)-wins-losses);
+}
+function getStandings(division){
+    const teams=season().divisions[division];
+    if(!teams.length) return [];
+    const entries=teams.map(t=>{ const s=getTeamStats(t.id,division); const gp=s.wins+s.losses; return {...t,...s,gp,winPct:gp>0?s.wins/gp:null,remaining:getRemainingGames(t.id,division)}; });
+    entries.sort((a,b)=>{ const pa=a.winPct??-1,pb=b.winPct??-1; if(Math.abs(pa-pb)>1e-8) return pb-pa; if(a.wins!==b.wins) return b.wins-a.wins; return a.losses-b.losses; });
+    const result=[]; let i=0;
+    while(i<entries.length){
+        let j=i+1;
+        while(j<entries.length){ const a=entries[i],b=entries[j]; if(Math.abs((a.winPct??-1)-(b.winPct??-1))<1e-8&&a.wins===b.wins&&a.losses===b.losses) j++; else break; }
+        result.push(...(j-i===1?[entries[i]]:sortByH2H(entries.slice(i,j),division)));
+        i=j;
+    }
+    return result;
+}
+function sortByH2H(group,division){
+    if(group.length<=1) return group;
+    const h=getGroupH2H(group.map(t=>t.id),division);
+    return [...group].sort((a,b)=>{
+        const ha=h[a.id],hb=h[b.id];
+        const tA=ha.wins+ha.losses,tB=hb.wins+hb.losses;
+        const pA=tA>0?ha.wins/tA:.5,pB=tB>0?hb.wins/tB:.5;
+        if(Math.abs(pA-pB)>1e-8) return pB-pA;
+        const rA=ha.pa>0?ha.pf/ha.pa:1,rB=hb.pa>0?hb.pf/hb.pa:1;
+        if(Math.abs(rA-rB)>1e-8) return rB-rA; return 0;
+    });
+}
+function getPlayoffStatuses(standings,spots=8){
+    const n=standings.length; const statuses={};
+    if(n<=spots) return statuses;
+    const team8=standings[spots-1];
+    let bestOut=0; for(let k=spots;k<n;k++) bestOut=Math.max(bestOut,standings[k].wins+standings[k].remaining);
+    for(let k=0;k<n;k++){
+        const t=standings[k];
+        if(k<spots){ if(bestOut<t.wins) statuses[t.id]='clinched'; }
+        else{ if(t.wins+t.remaining<team8.wins) statuses[t.id]='eliminated'; }
+    }
+    return statuses;
+}
+
+// ============================================================
+//  PLAYOFF HELPERS
+// ============================================================
+const R2_A=[0,3,5,6], R2_B=[1,2,4,7];
+function po(){ return season().playoff||{}; }
+function r1Winner(m){ if(!m||m.score1===null||m.score2===null) return null; return m.score1>m.score2?m.team1Id:m.team2Id; }
+function getR2TeamIds(group){
+    const p=po(); if(!p.generated||!p.round1?.length) return [null,null,null,null];
+    return (group==='A'?R2_A:R2_B).map(i=>r1Winner(p.round1[i]));
+}
+function getR2Stats(teamId,games){ let wins=0,losses=0,pf=0,pa=0; for(const g of games){ if(g.team1Id===teamId){pf+=g.score1;pa+=g.score2;g.score1>g.score2?wins++:losses++;} else if(g.team2Id===teamId){pf+=g.score2;pa+=g.score1;g.score2>g.score1?wins++:losses++;} } return {wins,losses,pf,pa}; }
+function getR2Standings(group){
+    const p=po(); const teamIds=getR2TeamIds(group).filter(id=>id!==null);
+    if(!teamIds.length) return [];
+    const games=(p.round2?.[group]?.games)||[];
+    const n=teamIds.length;
+    const entries=teamIds.map(id=>{ const s=getR2Stats(id,games); const gp=s.wins+s.losses; return {id,rawName:getTeam(id)?.name||'?',...s,gp,winPct:gp>0?s.wins/gp:null,remaining:Math.max(0,(n-1)-gp)}; });
+    entries.sort((a,b)=>{ const pa=a.winPct??-1,pb=b.winPct??-1; if(Math.abs(pa-pb)>1e-8) return pb-pa; if(a.wins!==b.wins) return b.wins-a.wins; return a.losses-b.losses; });
+    const result=[]; let i=0;
+    while(i<entries.length){
+        let j=i+1; while(j<entries.length){ const a=entries[i],b=entries[j]; if(Math.abs((a.winPct??-1)-(b.winPct??-1))<1e-8&&a.wins===b.wins&&a.losses===b.losses) j++; else break; }
+        if(j-i===1){ result.push(entries[i]); } else {
+            const grp=entries.slice(i,j); const h={}; for(const id of grp.map(t=>t.id)) h[id]={wins:0,losses:0,pf:0,pa:0};
+            for(const g of games){ if(!grp.map(t=>t.id).includes(g.team1Id)||!grp.map(t=>t.id).includes(g.team2Id)) continue; const {team1Id:t1,team2Id:t2,score1:s1,score2:s2}=g; if(s1>s2){h[t1].wins++;h[t2].losses++;}else{h[t2].wins++;h[t1].losses++;} h[t1].pf+=s1;h[t1].pa+=s2;h[t2].pf+=s2;h[t2].pa+=s1; }
+            result.push(...[...grp].sort((a,b)=>{ const ha=h[a.id],hb=h[b.id]; const tA=ha.wins+ha.losses,tB=hb.wins+hb.losses; const pA=tA>0?ha.wins/tA:.5,pB=tB>0?hb.wins/tB:.5; if(Math.abs(pA-pB)>1e-8) return pB-pA; const rA=ha.pa>0?ha.pf/ha.pa:1,rB=hb.pa>0?hb.pf/hb.pa:1; if(Math.abs(rA-rB)>1e-8) return rB-rA; return 0; }));
+        }
+        i=j;
+    }
+    return result;
+}
+function getR2Statuses(standings){ const n=standings.length,spots=2,statuses={}; if(n<=spots) return statuses; const cut=standings[spots-1]; let bestOut=0; for(let k=spots;k<n;k++) bestOut=Math.max(bestOut,standings[k].wins+standings[k].remaining); for(let k=0;k<n;k++){ const t=standings[k]; if(k<spots){ if(bestOut<t.wins) statuses[t.id]='clinched'; } else{ if(t.wins+t.remaining<cut.wins) statuses[t.id]='eliminated'; } } return statuses; }
+
+// ============================================================
+//  FORMAT
+// ============================================================
+function fmtPct(p){ if(p===null) return '-'; if(p>=1) return '1.000'; if(p<=0) return '.000'; return p.toFixed(3).slice(1); }
+function fmtGB(gb){ if(gb===null||gb<0) return '-'; if(gb===0) return '-'; return gb%1===0?String(gb):gb.toFixed(1); }
+
+// ============================================================
+//  SEARCH
+// ============================================================
+let searchQuery = '';
+
+function onSearchInput(){
+    const input = document.getElementById('search-input');
+    searchQuery = input.value.trim();
+    document.getElementById('search-clear').classList.toggle('visible', searchQuery.length > 0);
+    renderSearchResults();
+}
+
+function clearSearch(){
+    document.getElementById('search-input').value = '';
+    searchQuery = '';
+    document.getElementById('search-clear').classList.remove('visible');
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('main-content').style.display = '';
+}
+
+function renderSearchResults(){
+    const resultsEl = document.getElementById('search-results');
+    const mainEl    = document.getElementById('main-content');
+    if(!searchQuery){ resultsEl.style.display='none'; mainEl.style.display=''; return; }
+
+    // Find matching teams in current season (both divisions)
+    const s = season();
+    const allTeams = [];
+    for(const div of ['east','west']){
+        for(const t of s.divisions[div]) allTeams.push({...t, division:div});
+    }
+    const matched = allTeams.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if(!matched.length){
+        resultsEl.innerHTML=`<div class="no-results">找不到包含「${escHtml(searchQuery)}」的隊伍</div>`;
+        resultsEl.style.display='block'; mainEl.style.display='none'; return;
+    }
+
+    const divName = {east:'東區', west:'西區'};
+    let html = '';
+
+    for(const team of matched){
+        // Get all games for this team in this season
+        const teamGames = s.games.filter(g => g.team1Id===team.id || g.team2Id===team.id);
+        const sortedGames = [...teamGames].sort((a,b)=> new Date(b.date||0)-new Date(a.date||0));
+
+        let wins=0, losses=0;
+        let cardsHtml = '';
+
+        for(const g of sortedGames){
+            const isTeam1 = g.team1Id===team.id;
+            const myScore = isTeam1 ? g.score1 : g.score2;
+            const opScore = isTeam1 ? g.score2 : g.score1;
+            const oppId   = isTeam1 ? g.team2Id : g.team1Id;
+            const opp     = getTeam(oppId);
+            const won     = myScore > opScore;
+            won ? wins++ : losses++;
+            const date = g.date ? new Date(g.date).toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'}) : '';
+            cardsHtml += `
+                <div class="game-result-card">
+                    <span class="gr-tag">${divName[g.division]||''}</span>
+                    <div class="gr-body">
+                        <div class="gr-vs">vs <span>${escHtml(opp?.name||'?')}</span></div>
+                        <div class="gr-score">${myScore} : ${opScore}</div>
+                        ${date?`<div class="gr-date">${date}</div>`:''}
+                    </div>
+                    <span class="gr-result ${won?'gr-win':'gr-loss'}">${won?'勝':'負'}</span>
+                </div>`;
+        }
+
+        if(!sortedGames.length) cardsHtml=`<div style="padding:10px 0;color:#4a5080;font-size:.85rem">尚無比賽紀錄</div>`;
+
+        html += `<div style="padding:12px 16px">
+            <div class="search-result-header">${divName[team.division]} <span>${escHtml(team.name)}</span></div>
+            ${cardsHtml}
+            ${wins+losses>0?`<div class="search-summary">${wins+losses} 場 ${wins} 勝 ${losses} 負</div>`:''}
+        </div>`;
+    }
+
+    resultsEl.innerHTML=html;
+    resultsEl.style.display='block';
+    mainEl.style.display='none';
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function renderAll(){
+    renderSeasonBar();
+    renderModeBar();
+    renderRoundBar();
+    renderSearchArea();
+    renderMainContent();
+}
+
+function renderSeasonBar(){
+    const bar=document.getElementById('season-bar');
+    const names=Object.keys(state.seasons).sort();
+    let h='<span class="bar-label">賽季</span>';
+    for(const n of names) h+=`<button class="tab-btn${n===state.currentSeason?' active':''}" onclick="switchSeason('${escHtml(n)}')">${escHtml(n)}</button>`;
+    bar.innerHTML=h;
+}
+
+function renderModeBar(){
+    document.getElementById('mode-bar').innerHTML=`
+        <button class="mode-btn${view.mode==='regular'?' active':''}" onclick="setMode('regular')">例行賽</button>
+        <button class="mode-btn${view.mode==='playoff'?' active':''}" onclick="setMode('playoff')">季後賽</button>`;
+}
+
+function renderRoundBar(){
+    const bar=document.getElementById('round-bar');
+    if(view.mode!=='playoff'){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    const rounds=[['round1','第一輪'],['round2','第二輪'],['semis','四強'],['finals','冠軍賽']];
+    bar.innerHTML=rounds.map(([k,l])=>`<button class="round-btn${view.round===k?' active':''}" onclick="setRound('${k}')">${l}</button>`).join('');
+}
+
+function renderSearchArea(){
+    // Only show in regular season mode
+    document.getElementById('search-area').style.display = view.mode==='regular' ? 'block' : 'none';
+    if(view.mode!=='regular'){ searchQuery=''; if(document.getElementById('search-input')) document.getElementById('search-input').value=''; }
+}
+
+function renderMainContent(){
+    if(view.mode==='regular'){
+        renderRegularSeason();
+    } else {
+        clearSearchDisplay();
+        switch(view.round){
+            case 'round1': renderRound1(); break;
+            case 'round2': renderRound2(); break;
+            case 'semis':  renderSemis();  break;
+            case 'finals': renderFinals(); break;
+        }
+    }
+}
+
+function clearSearchDisplay(){
+    document.getElementById('search-results').style.display='none';
+    document.getElementById('main-content').style.display='';
+}
+
+// ── Regular Season ──
+function renderRegularSeason(){
+    clearSearchDisplay();
+    // If there's an active search, re-render search results
+    if(searchQuery) renderSearchResults();
+    const mc=document.getElementById('main-content');
+    mc.style.cssText='display:grid;padding:14px 16px;grid-template-columns:1fr 1fr;gap:14px';
+    mc.innerHTML=`
+        <div class="division-section">
+            <div class="division-header east">
+                <span class="division-title">東 區</span>
+                <span class="team-count" id="east-count"></span>
+            </div>
+            <div id="east-standings"></div>
+        </div>
+        <div class="division-section">
+            <div class="division-header west">
+                <span class="division-title">西 區</span>
+                <span class="team-count" id="west-count"></span>
+            </div>
+            <div id="west-standings"></div>
+        </div>`;
+    renderDivStandings('east');
+    renderDivStandings('west');
+}
+
+function renderDivStandings(division){
+    const standings=getStandings(division);
+    const countEl=document.getElementById(`${division}-count`);
+    const container=document.getElementById(`${division}-standings`);
+    if(!countEl||!container) return;
+    const n=standings.length;
+    countEl.textContent=n?`${n}隊`:'';
+    if(n===0){ container.innerHTML=`<div class="empty-state">尚無球隊</div>`; return; }
+    const statuses=getPlayoffStatuses(standings,8);
+    const spots=Math.min(8,n);
+    const leader=standings[0];
+    const note=n>8?`<div class="playoff-note">── 季後賽分界（前${spots}名晉級）──</div>`:'';
+    let rows='';
+    for(let i=0;i<n;i++){
+        const t=standings[i]; const status=statuses[t.id]; const isLast=i===spots-1&&n>spots;
+        let gb=null; if(leader.gp>0&&t.gp>0) gb=((leader.wins-t.wins)+(t.losses-leader.losses))/2;
+        let rk; if(i===0) rk=`<span class="medal-gold">1</span>`; else if(i===1) rk=`<span class="medal-silver">2</span>`; else if(i===2) rk=`<span class="medal-bronze">3</span>`; else rk=i+1;
+        let badge=''; if(status==='clinched') badge='<span class="status-badge status-clinched">晉級</span>'; else if(status==='eliminated') badge='<span class="status-badge status-eliminated">淘汰</span>';
+        rows+=`<tr class="${isLast?'cutoff-line':''}"><td class="rank-cell">${rk}</td><td class="left"><div class="team-name-cell"><span>${escHtml(t.name)}</span>${badge}</div></td><td class="win-color">${t.wins}</td><td class="loss-color">${t.losses}</td><td>${fmtPct(t.winPct)}</td><td class="gb-color">${fmtGB(gb)}</td></tr>`;
+    }
+    container.innerHTML=`${note}<table class="standings-table"><thead><tr><th>#</th><th class="left">球隊</th><th>勝</th><th>負</th><th>勝率</th><th>勝差</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── Round 1 ──
+function renderRound1(){
+    const p=po(); const mc=document.getElementById('main-content');
+    mc.style.cssText='display:block;padding:14px 16px';
+    if(!p.generated){ mc.innerHTML=`<div class="po-notice">尚未產生季後賽對戰組合</div>`; return; }
+    const labels=['東一 vs 西八','東二 vs 西七','東三 vs 西六','東四 vs 西五','東五 vs 西四','東六 vs 西三','東七 vs 西二','東八 vs 西一'];
+    let cards='';
+    (p.round1||[]).forEach((m,i)=>{
+        const t1=getTeam(m.team1Id),t2=getTeam(m.team2Id);
+        const hasScore=m.score1!==null&&m.score2!==null;
+        const w1=hasScore&&m.score1>m.score2,w2=hasScore&&m.score2>m.score1;
+        cards+=`<div class="matchup-card${hasScore?' played':''}">
+            <div class="matchup-side"><div class="match-seed">${m.team1Seed||''}</div><div class="match-team${!m.team1Id?' pending':w1?' winner':w2?' loser':''}">${m.team1Id?escHtml(t1?.name||'?'):'待定'}</div></div>
+            <div class="match-center"><div class="match-score${!hasScore?' pending':''}">${hasScore?`${m.score1}:${m.score2}`:'－:－'}</div><div class="match-label">${labels[i]||''}</div></div>
+            <div class="matchup-side"><div class="match-seed">${m.team2Seed||''}</div><div class="match-team${!m.team2Id?' pending':w2?' winner':w1?' loser':''}">${m.team2Id?escHtml(t2?.name||'?'):'待定'}</div></div>
+        </div>`;
+    });
+    mc.innerHTML=`<div class="division-section"><div class="matchup-section-title">第一輪對戰組合</div><div class="matchup-grid">${cards}</div></div>`;
+}
+
+// ── Round 2 ──
+function renderRound2(){
+    const p=po(); const mc=document.getElementById('main-content');
+    mc.style.cssText='display:block;padding:14px 16px';
+    if(!p.generated){ mc.innerHTML=`<div class="po-notice">尚未產生季後賽對戰組合</div>`; return; }
+    mc.innerHTML=`<div class="r2-grid"><div id="r2-A"></div><div id="r2-B"></div></div>`;
+    ['A','B'].forEach(group=>{
+        const container=document.getElementById(`r2-${group}`);
+        const standings=getR2Standings(group);
+        const statuses=getR2Statuses(standings);
+        let rows='';
+        if(!standings.length){ rows=`<tr><td colspan="5" style="text-align:center;color:#4a5080;padding:12px;font-size:.85rem">第一輪尚未完成</td></tr>`; }
+        else { standings.forEach((t,i)=>{ const status=statuses[t.id]; const isLast=i===1&&standings.length>2; let rk; if(i===0) rk=`<span class="medal-gold">1</span>`; else if(i===1) rk=`<span class="medal-silver">2</span>`; else rk=i+1; let badge=''; if(status==='clinched') badge='<span class="status-badge status-clinched">晉四強</span>'; else if(status==='eliminated') badge='<span class="status-badge status-eliminated">淘汰</span>'; rows+=`<tr class="${isLast?'cutoff-line':''}"><td class="rank-cell">${rk}</td><td class="left"><div class="team-name-cell"><span>${escHtml(t.rawName)}</span>${badge}</div></td><td class="win-color">${t.wins}</td><td class="loss-color">${t.losses}</td><td>${fmtPct(t.winPct)}</td></tr>`; }); }
+        container.innerHTML=`<div class="r2-group-section"><div class="r2-group-header ${group==='A'?'groupA':'groupB'}"><span class="r2-group-title">${group} 區</span></div><table class="standings-table"><thead><tr><th>#</th><th class="left">球隊</th><th>勝</th><th>負</th><th>勝率</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    });
+}
+
+// ── Semis ──
+function renderSemis(){
+    const p=po(); const mc=document.getElementById('main-content');
+    mc.style.cssText='display:block;padding:14px 16px';
+    if(!p.generated){ mc.innerHTML=`<div class="po-notice">尚未產生季後賽對戰組合</div>`; return; }
+    const stA=getR2Standings('A'),stB=getR2Standings('B');
+    const specs=[{t1:stA[0],s1:'A區 第1',t2:stB[1],s2:'B區 第2',label:'四強 第1場'},{t1:stA[1],s1:'A區 第2',t2:stB[0],s2:'B區 第1',label:'四強 第2場'}];
+    let cards='';
+    specs.forEach((spec,i)=>{
+        const m=(p.semis&&p.semis[i])||{score1:null,score2:null};
+        const t1id=spec.t1?.id||null,t2id=spec.t2?.id||null;
+        const hasScore=m.score1!==null&&m.score2!==null;
+        const w1=hasScore&&m.score1>m.score2,w2=hasScore&&m.score2>m.score1;
+        cards+=`<div class="matchup-card${hasScore?' played':''}">
+            <div class="matchup-side"><div class="match-seed">${spec.s1}</div><div class="match-team${!t1id?' pending':w1?' winner':w2?' loser':''}">${t1id?escHtml(spec.t1.rawName):'待定'}</div></div>
+            <div class="match-center"><div class="match-score${!hasScore?' pending':''}">${hasScore?`${m.score1}:${m.score2}`:'－:－'}</div><div class="match-label">${spec.label}</div></div>
+            <div class="matchup-side"><div class="match-seed">${spec.s2}</div><div class="match-team${!t2id?' pending':w2?' winner':w1?' loser':''}">${t2id?escHtml(spec.t2.rawName):'待定'}</div></div>
+        </div>`;
+    });
+    mc.innerHTML=`<div class="division-section"><div class="matchup-section-title">四強</div><div class="matchup-grid">${cards}</div></div>`;
+}
+
+// ── Finals ──
+function renderFinals(){
+    const p=po(); const mc=document.getElementById('main-content');
+    mc.style.cssText='display:block;padding:14px 16px';
+    if(!p.generated){ mc.innerHTML=`<div class="po-notice">尚未產生季後賽對戰組合</div>`; return; }
+    const stA=getR2Standings('A'),stB=getR2Standings('B');
+    const s1=p.semis&&p.semis[0],s2=p.semis&&p.semis[1];
+    let fin1id=null,fin2id=null;
+    if(s1&&s1.score1!==null) fin1id=s1.score1>s1.score2?s1.team1Id:s1.team2Id;
+    if(s2&&s2.score1!==null) fin2id=s2.score1>s2.score2?s2.team1Id:s2.team2Id;
+    const m=p.finals||{score1:null,score2:null};
+    const hasScore=m.score1!==null&&m.score2!==null;
+    const w1=hasScore&&m.score1>m.score2,w2=hasScore&&m.score2>m.score1;
+    const card=`<div class="matchup-card${hasScore?' played':''}">
+        <div class="matchup-side"><div class="match-seed">四強第1場勝者</div><div class="match-team${!fin1id?' pending':w1?' winner':w2?' loser':''}">${fin1id?escHtml(getTeam(fin1id)?.name||'?'):'待定'}</div></div>
+        <div class="match-center"><div class="match-score${!hasScore?' pending':''}" style="font-size:1.4rem">${hasScore?`${m.score1}:${m.score2}`:'－:－'}</div><div class="match-label">冠軍賽</div></div>
+        <div class="matchup-side"><div class="match-seed">四強第2場勝者</div><div class="match-team${!fin2id?' pending':w2?' winner':w1?' loser':''}">${fin2id?escHtml(getTeam(fin2id)?.name||'?'):'待定'}</div></div>
+    </div>`;
+    mc.innerHTML=`<div class="division-section"><div class="matchup-section-title">冠軍賽</div><div class="finals-wrap">${card}</div></div>`;
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function switchSeason(name){ state.currentSeason=name; clearSearch(); view={mode:'regular',round:'round1'}; renderAll(); }
+function setMode(m){ view.mode=m; clearSearch(); renderAll(); }
+function setRound(r){ view.round=r; renderAll(); }
+
+// ============================================================
+//  INIT
+// ============================================================
+loadState();renderAll();
+VIEWER_SCRIPT_END
+</body>
+</html>
+
+</script>
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let state = {
+    currentSeason: '25-26',
+    seasons: { '25-26': { divisions:{ east:[], west:[] }, games:[], playoff:null } }
+};
+
+let view = { mode:'regular', round:'round1' };
+let gameLogVisible = false;
+let addingDivision = 'east';
+let mmCtx = null;    // { type:'r1'|'semi'|'finals', index, team1Id, team2Id, seed1, seed2, name1, name2 }
+let r2CurrentGroup = 'A';
+
+// ============================================================
+//  PERSISTENCE
+// ============================================================
+function saveState(){ try{ localStorage.setItem('ccuLeague_v3', JSON.stringify(state)); }catch(e){} }
+function loadState(){ try{ const r=localStorage.getItem('ccuLeague_v3'); if(r) state=JSON.parse(r); }catch(e){} }
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function season(){ return state.seasons[state.currentSeason]; }
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getTeam(id){ const s=season(); for(const d of['east','west']){ const t=s.divisions[d].find(t=>t.id===id); if(t) return t; } return null; }
+function teamName(id){ const t=getTeam(id); return t ? escHtml(t.name) : (id ? '?' : '待定'); }
+
+// ============================================================
+//  SEASON
+// ============================================================
+function switchSeason(name){ state.currentSeason=name; view={mode:'regular',round:'round1'}; gameLogVisible=false; saveState(); renderAll(); }
+function addSeason(){
+    const name=document.getElementById('season-name-input').value.trim();
+    const err=document.getElementById('add-season-error');
+    if(!name){ err.textContent='請輸入賽季名稱'; return; }
+    if(state.seasons[name]){ err.textContent='此賽季已存在'; return; }
+    state.seasons[name]={ divisions:{ east:[], west:[] }, games:[], playoff:null };
+    state.currentSeason=name;
+    saveState(); closeModal('add-season-modal'); renderAll();
+}
+function openAddSeasonModal(){
+    const m=state.currentSeason.match(/^(\d+)-(\d+)$/);
+    document.getElementById('season-name-input').value = m ? `${+m[1]+1}-${+m[2]+1}` : '';
+    document.getElementById('add-season-error').textContent='';
+    document.getElementById('add-season-modal').classList.add('active');
+    setTimeout(()=>document.getElementById('season-name-input').focus(),80);
+}
+
+// ============================================================
+//  REGULAR SEASON STATS
+// ============================================================
+function getTeamStats(teamId, division){
+    let wins=0,losses=0,pf=0,pa=0;
+    for(const g of season().games){
+        if(g.division!==division) continue;
+        if(g.team1Id===teamId){ pf+=g.score1; pa+=g.score2; g.score1>g.score2?wins++:losses++; }
+        else if(g.team2Id===teamId){ pf+=g.score2; pa+=g.score1; g.score2>g.score1?wins++:losses++; }
+    }
+    return {wins,losses,pf,pa};
+}
+function getGroupH2H(teamIds, division){
+    const h={}; for(const id of teamIds) h[id]={wins:0,losses:0,pf:0,pa:0};
+    for(const g of season().games){
+        if(g.division!==division) continue;
+        if(!teamIds.includes(g.team1Id)||!teamIds.includes(g.team2Id)) continue;
+        const {team1Id:t1,team2Id:t2,score1:s1,score2:s2}=g;
+        if(s1>s2){h[t1].wins++;h[t2].losses++;}else{h[t2].wins++;h[t1].losses++;}
+        h[t1].pf+=s1;h[t1].pa+=s2;h[t2].pf+=s2;h[t2].pa+=s1;
+    }
+    return h;
+}
+function getRemainingGames(teamId, division){
+    const n=season().divisions[division].length;
+    const {wins,losses}=getTeamStats(teamId,division);
+    return Math.max(0,(n-1)-wins-losses);
+}
+function getStandings(division){
+    const teams=season().divisions[division];
+    if(!teams.length) return [];
+    const entries=teams.map(t=>{ const s=getTeamStats(t.id,division); const gp=s.wins+s.losses; return {...t,...s,gp,winPct:gp>0?s.wins/gp:null,remaining:getRemainingGames(t.id,division)}; });
+    entries.sort((a,b)=>{ const pa=a.winPct??-1,pb=b.winPct??-1; if(Math.abs(pa-pb)>1e-8) return pb-pa; if(a.wins!==b.wins) return b.wins-a.wins; return a.losses-b.losses; });
+    const result=[]; let i=0;
+    while(i<entries.length){
+        let j=i+1;
+        while(j<entries.length){ const a=entries[i],b=entries[j]; if(Math.abs((a.winPct??-1)-(b.winPct??-1))<1e-8&&a.wins===b.wins&&a.losses===b.losses) j++; else break; }
+        result.push(...(j-i===1?[entries[i]]:sortByH2H(entries.slice(i,j),division)));
+        i=j;
+    }
+    return result;
+}
+function sortByH2H(group, division){
+    if(group.length<=1) return group;
+    const h=getGroupH2H(group.map(t=>t.id),division);
+    return [...group].sort((a,b)=>{
+        const ha=h[a.id],hb=h[b.id];
+        const tA=ha.wins+ha.losses,tB=hb.wins+hb.losses;
+        const pA=tA>0?ha.wins/tA:.5,pB=tB>0?hb.wins/tB:.5;
+        if(Math.abs(pA-pB)>1e-8) return pB-pA;
+        const rA=ha.pa>0?ha.pf/ha.pa:1,rB=hb.pa>0?hb.pf/hb.pa:1;
+        if(Math.abs(rA-rB)>1e-8) return rB-rA;
+        return 0;
+    });
+}
+function getPlayoffStatuses(standings, spots=8){
+    const n=standings.length; const statuses={};
+    if(n<=spots) return statuses;
+    const team8=standings[spots-1];
+    let bestOut=0; for(let k=spots;k<n;k++) bestOut=Math.max(bestOut,standings[k].wins+standings[k].remaining);
+    for(let k=0;k<n;k++){
+        const t=standings[k];
+        if(k<spots){ if(bestOut<t.wins) statuses[t.id]='clinched'; }
+        else{ if(t.wins+t.remaining<team8.wins) statuses[t.id]='eliminated'; }
+    }
+    return statuses;
+}
+
+// ============================================================
+//  PLAYOFF DATA HELPERS
+// ============================================================
+function ensurePlayoff(){
+    const s=season();
+    if(!s.playoff){
+        s.playoff={ generated:false, round1:[], round2:{ A:{ games:[] }, B:{ games:[] } }, semis:[null,null], finals:null };
+    }
+    return s.playoff;
+}
+
+// R1 group assignments: A=[0,3,5,6], B=[1,2,4,7]
+const R2_GROUP_A_INDICES=[0,3,5,6];
+const R2_GROUP_B_INDICES=[1,2,4,7];
+
+function r1Winner(m){ if(!m||m.score1===null||m.score2===null) return null; return m.score1>m.score2?m.team1Id:m.team2Id; }
+
+function getR2TeamIds(group){
+    const po=ensurePlayoff();
+    if(!po.generated||!po.round1.length) return [null,null,null,null];
+    const idx=group==='A'?R2_GROUP_A_INDICES:R2_GROUP_B_INDICES;
+    return idx.map(i=>r1Winner(po.round1[i]));
+}
+
+// Round 2 stats (game list passed as argument)
+function getR2Stats(teamId, games){
+    let wins=0,losses=0,pf=0,pa=0;
+    for(const g of games){
+        if(g.team1Id===teamId){ pf+=g.score1; pa+=g.score2; g.score1>g.score2?wins++:losses++; }
+        else if(g.team2Id===teamId){ pf+=g.score2; pa+=g.score1; g.score2>g.score1?wins++:losses++; }
+    }
+    return {wins,losses,pf,pa};
+}
+function getR2H2H(teamIds, games){
+    const h={}; for(const id of teamIds) h[id]={wins:0,losses:0,pf:0,pa:0};
+    for(const g of games){
+        if(!teamIds.includes(g.team1Id)||!teamIds.includes(g.team2Id)) continue;
+        const {team1Id:t1,team2Id:t2,score1:s1,score2:s2}=g;
+        if(s1>s2){h[t1].wins++;h[t2].losses++;}else{h[t2].wins++;h[t1].losses++;}
+        h[t1].pf+=s1;h[t1].pa+=s2;h[t2].pf+=s2;h[t2].pa+=s1;
+    }
+    return h;
+}
+function getR2Standings(group){
+    const po=ensurePlayoff();
+    const teamIds=getR2TeamIds(group).filter(id=>id!==null);
+    if(!teamIds.length) return [];
+    const games=po.round2[group].games;
+    const n=teamIds.length;
+    const entries=teamIds.map(id=>{
+        const s=getR2Stats(id,games); const gp=s.wins+s.losses;
+        return {id,name:teamName(id),rawName:getTeam(id)?.name||'?',...s,gp,winPct:gp>0?s.wins/gp:null,remaining:Math.max(0,(n-1)-gp)};
+    });
+    entries.sort((a,b)=>{ const pa=a.winPct??-1,pb=b.winPct??-1; if(Math.abs(pa-pb)>1e-8) return pb-pa; if(a.wins!==b.wins) return b.wins-a.wins; return a.losses-b.losses; });
+    // h2h tiebreaker groups
+    const result=[]; let i=0;
+    while(i<entries.length){
+        let j=i+1;
+        while(j<entries.length){ const a=entries[i],b=entries[j]; if(Math.abs((a.winPct??-1)-(b.winPct??-1))<1e-8&&a.wins===b.wins&&a.losses===b.losses) j++; else break; }
+        if(j-i===1){ result.push(entries[i]); }
+        else{
+            const grp=entries.slice(i,j); const h=getR2H2H(grp.map(t=>t.id),games);
+            result.push(...[...grp].sort((a,b)=>{
+                const ha=h[a.id],hb=h[b.id];
+                const tA=ha.wins+ha.losses,tB=hb.wins+hb.losses;
+                const pA=tA>0?ha.wins/tA:.5,pB=tB>0?hb.wins/tB:.5;
+                if(Math.abs(pA-pB)>1e-8) return pB-pA;
+                const rA=ha.pa>0?ha.pf/ha.pa:1,rB=hb.pa>0?hb.pf/hb.pa:1;
+                if(Math.abs(rA-rB)>1e-8) return rB-rA; return 0;
+            }));
+        }
+        i=j;
+    }
+    return result;
+}
+function getR2Statuses(standings){
+    const n=standings.length, spots=2, statuses={};
+    if(n<=spots) return statuses;
+    const cut=standings[spots-1];
+    let bestOut=0; for(let k=spots;k<n;k++) bestOut=Math.max(bestOut,standings[k].wins+standings[k].remaining);
+    for(let k=0;k<n;k++){
+        const t=standings[k];
+        if(k<spots){ if(bestOut<t.wins) statuses[t.id]='clinched'; }
+        else{ if(t.wins+t.remaining<cut.wins) statuses[t.id]='eliminated'; }
+    }
+    return statuses;
+}
+
+function semiWinner(semiData){
+    if(!semiData||semiData.score1===null||semiData.score2===null) return null;
+    return semiData.score1>semiData.score2?semiData.team1Id:semiData.team2Id;
+}
+
+// ============================================================
+//  FORMAT
+// ============================================================
+function fmtPct(p){ if(p===null) return '-'; if(p>=1) return '1.000'; if(p<=0) return '.000'; return p.toFixed(3).slice(1); }
+function fmtGB(gb){ if(gb===null||gb<0) return '-'; if(gb===0) return '-'; return gb%1===0?String(gb):gb.toFixed(1); }
+
+// ============================================================
+//  RENDER
+// ============================================================
+function renderAll(){
+    renderSeasonBar();
+    renderModeBar();
+    renderRoundBar();
+    renderActionsBar();
+    renderMainContent();
+}
+
+function renderSeasonBar(){
+    const bar=document.getElementById('season-bar');
+    const names=Object.keys(state.seasons).sort();
+    let h='<span class="bar-label">賽季</span>';
+    for(const n of names) h+=`<button class="tab-btn${n===state.currentSeason?' active':''}" onclick="switchSeason('${escHtml(n)}')">${escHtml(n)}</button>`;
+    h+=`<button class="add-tab-btn" onclick="openAddSeasonModal()">+ 新增賽季</button>`;
+    bar.innerHTML=h;
+}
+
+function renderModeBar(){
+    const bar=document.getElementById('mode-bar');
+    bar.innerHTML=`
+        <button class="mode-btn${view.mode==='regular'?' active':''}" onclick="setMode('regular')">例行賽</button>
+        <button class="mode-btn${view.mode==='playoff'?' active':''}" onclick="setMode('playoff')">季後賽</button>`;
+}
+
+function renderRoundBar(){
+    const bar=document.getElementById('round-bar');
+    if(view.mode!=='playoff'){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    const rounds=[['round1','第一輪'],['round2','第二輪'],['semis','四強'],['finals','冠軍賽']];
+    bar.innerHTML=rounds.map(([k,label])=>`<button class="round-btn${view.round===k?' active':''}" onclick="setRound('${k}')">${label}</button>`).join('');
+}
+
+function renderActionsBar(){
+    const bar=document.getElementById('actions-bar');
+    if(view.mode==='regular'){
+        bar.innerHTML=`
+            <button class="btn btn-primary" onclick="openRecordGameModal()">+ 輸入戰績</button>
+            <button class="btn btn-secondary" id="log-toggle-btn" onclick="toggleGameLog()">${gameLogVisible?'隱藏比賽紀錄':'比賽紀錄'}</button>
+            <button class="btn btn-secondary" onclick="generateBracket()" style="margin-left:auto">總結戰績</button>`;
+    } else if(view.mode==='playoff'&&view.round==='round2'){
+        bar.innerHTML=`
+            <button class="btn btn-secondary" onclick="openR2GameModal('A')">+ 輸入 A區 成績</button>
+            <button class="btn btn-secondary" onclick="openR2GameModal('B')">+ 輸入 B區 成績</button>`;
+    } else {
+        bar.innerHTML='';
+    }
+}
+
+function renderMainContent(){
+    const mc=document.getElementById('main-content');
+    if(view.mode==='regular'){
+        renderRegularSeason(mc);
+    } else {
+        mc.style.display='block';
+        switch(view.round){
+            case 'round1': renderRound1(mc); break;
+            case 'round2': renderRound2(mc); break;
+            case 'semis':  renderSemis(mc);  break;
+            case 'finals': renderFinals(mc); break;
+        }
+    }
+}
+
+// ── Regular Season ──
+function renderRegularSeason(mc){
+    mc.style.display='grid';
+    mc.innerHTML=`
+        <div class="division-section">
+            <div class="division-header east">
+                <div class="div-info"><span class="division-title">東 區</span><span class="team-count" id="east-team-count"></span></div>
+                <button class="btn btn-secondary btn-sm" onclick="openAddTeamModal('east')">+ 新增球隊</button>
+            </div>
+            <div id="east-standings"></div>
+        </div>
+        <div class="division-section">
+            <div class="division-header west">
+                <div class="div-info"><span class="division-title">西 區</span><span class="team-count" id="west-team-count"></span></div>
+                <button class="btn btn-secondary btn-sm" onclick="openAddTeamModal('west')">+ 新增球隊</button>
+            </div>
+            <div id="west-standings"></div>
+        </div>
+        ${gameLogVisible ? `<div class="game-log-section">
+            <div class="game-log-header"><h3>比賽紀錄</h3><span id="game-count-label" style="font-size:.8rem;color:#4a5080"></span></div>
+            <div class="game-log-body" id="game-log-body"></div>
+        </div>` : ''}`;
+    renderDivStandings('east');
+    renderDivStandings('west');
+    if(gameLogVisible) renderGameLog();
+}
+
+function renderDivStandings(division){
+    const standings=getStandings(division);
+    const countEl=document.getElementById(`${division}-team-count`);
+    const container=document.getElementById(`${division}-standings`);
+    if(!countEl||!container) return;
+    const n=standings.length;
+    countEl.textContent=n?`${n} 支隊伍`:'';
+    if(n===0){ container.innerHTML=`<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px">--</div><div class="empty-title">尚無球隊，請點選「+ 新增球隊」</div></div>`; return; }
+    const statuses=getPlayoffStatuses(standings,8);
+    const spots=Math.min(8,n);
+    const leader=standings[0];
+    const note=n>8?`<div class="playoff-note">── 季後賽分界（前 ${spots} 名晉級）──</div>`:'';
+    let rows='';
+    for(let i=0;i<n;i++){
+        const t=standings[i]; const status=statuses[t.id]; const isLast=i===spots-1&&n>spots;
+        let gb=null; if(leader.gp>0&&t.gp>0) gb=((leader.wins-t.wins)+(t.losses-leader.losses))/2;
+        let rk; if(i===0) rk=`<span class="medal-gold">1</span>`; else if(i===1) rk=`<span class="medal-silver">2</span>`; else if(i===2) rk=`<span class="medal-bronze">3</span>`; else rk=i+1;
+        let badge=''; if(status==='clinched') badge='<span class="status-badge status-clinched">✓ 晉級</span>'; else if(status==='eliminated') badge='<span class="status-badge status-eliminated">✗ 淘汰</span>';
+        rows+=`<tr class="${isLast?'cutoff-line':''}"><td class="rank-cell">${rk}</td><td class="left"><div class="team-name-cell"><span>${escHtml(t.name)}</span>${badge}</div></td><td class="win-color">${t.wins}</td><td class="loss-color">${t.losses}</td><td>${fmtPct(t.winPct)}</td><td class="gb-color">${fmtGB(gb)}</td></tr>`;
+    }
+    container.innerHTML=`${note}<table class="standings-table"><thead><tr><th>#</th><th class="left">球隊</th><th>勝</th><th>負</th><th>勝率</th><th>勝差</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── Round 1 ──
+function renderRound1(mc){
+    const po=ensurePlayoff();
+    if(!po.generated){
+        mc.innerHTML=`<div style="padding:40px;text-align:center;color:#4a5080;font-size:1rem">請在「例行賽」介面按下「總結戰績」以產生季後賽對戰組合</div>`;
+        return;
+    }
+    let cards='';
+    const labels=['東一 vs 西八','東二 vs 西七','東三 vs 西六','東四 vs 西五','東五 vs 西四','東六 vs 西三','東七 vs 西二','東八 vs 西一'];
+    po.round1.forEach((m,i)=>{
+        const t1=getTeam(m.team1Id), t2=getTeam(m.team2Id);
+        const hasScore=m.score1!==null&&m.score2!==null;
+        const noTeams=!m.team1Id&&!m.team2Id;
+        const w1=hasScore&&m.score1>m.score2, w2=hasScore&&m.score2>m.score1;
+        cards+=`<div class="matchup-card${hasScore?' played':''}${noTeams?' no-teams':''}" onclick="${noTeams?'':`openMatchupModal('r1',${i})`}">
+            <div class="matchup-side">
+                <div class="match-seed">${m.team1Seed||'東?'}</div>
+                <div class="match-team${!m.team1Id?' pending':w1?' winner':w2?' loser':''}">${m.team1Id?escHtml(t1?.name||'?'):'待定'}</div>
+            </div>
+            <div class="match-center">
+                <div class="match-score${!hasScore?' pending':''}">${hasScore?`${m.score1} : ${m.score2}`:'－ : －'}</div>
+                <div class="match-label">${labels[i]||''}</div>
+            </div>
+            <div class="matchup-side">
+                <div class="match-seed">${m.team2Seed||'西?'}</div>
+                <div class="match-team${!m.team2Id?' pending':w2?' winner':w1?' loser':''}">${m.team2Id?escHtml(t2?.name||'?'):'待定'}</div>
+            </div>
+        </div>`;
+    });
+    mc.innerHTML=`<div class="division-section" style="grid-column:1/-1"><div class="matchup-section-title">第一輪對戰 ── 點擊場次可輸入成績</div><div class="matchup-grid">${cards}</div></div>`;
+}
+
+// ── Round 2 ──
+function renderRound2(mc){
+    const po=ensurePlayoff();
+    if(!po.generated){ mc.innerHTML=`<div style="padding:40px;text-align:center;color:#4a5080">請先產生季後賽對戰組合</div>`; return; }
+    mc.innerHTML=`<div style="grid-column:1/-1"><div class="r2-grid"><div id="r2-sec-A"></div><div id="r2-sec-B"></div></div></div>`;
+    renderR2Group('A');
+    renderR2Group('B');
+}
+
+function renderR2Group(group){
+    const container=document.getElementById(`r2-sec-${group}`);
+    if(!container) return;
+    const po=ensurePlayoff();
+    const standings=getR2Standings(group);
+    const statuses=getR2Statuses(standings);
+    const teamIds=getR2TeamIds(group);
+    const games=po.round2[group].games;
+    const colorClass=group==='A'?'groupA':'groupB';
+
+    let tableRows='';
+    if(!standings.length){
+        tableRows=`<tr><td colspan="5" style="text-align:center;color:#4a5080;padding:16px">第一輪尚未完成</td></tr>`;
+    } else {
+        standings.forEach((t,i)=>{
+            const status=statuses[t.id]; const isLast=i===1&&standings.length>2;
+            let rk; if(i===0) rk=`<span class="medal-gold">1</span>`; else if(i===1) rk=`<span class="medal-silver">2</span>`; else rk=i+1;
+            let badge=''; if(status==='clinched') badge='<span class="status-badge status-clinched">✓ 晉四強</span>'; else if(status==='eliminated') badge='<span class="status-badge status-eliminated">✗ 淘汰</span>';
+            tableRows+=`<tr class="${isLast?'cutoff-line':''}"><td class="rank-cell">${rk}</td><td class="left"><div class="team-name-cell"><span>${escHtml(t.rawName)}</span>${badge}</div></td><td class="win-color">${t.wins}</td><td class="loss-color">${t.losses}</td><td>${fmtPct(t.winPct)}</td></tr>`;
+        });
+    }
+
+    let gameLog='';
+    for(const g of [...games].reverse()){
+        const n1=escHtml(getTeam(g.team1Id)?.name||'?'), n2=escHtml(getTeam(g.team2Id)?.name||'?');
+        const w1=g.score1>g.score2;
+        gameLog+=`<div class="r2-game-item">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span class="g-team ${w1?'winner':'loser'}">${n1}</span>
+                <span class="g-score">${g.score1} : ${g.score2}</span>
+                <span class="g-team ${!w1?'winner':'loser'}">${n2}</span>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteR2Game('${group}','${g.id}')">刪除</button>
+        </div>`;
+    }
+
+    container.innerHTML=`<div class="r2-group-section">
+        <div class="r2-group-header ${colorClass}">
+            <span class="r2-group-title">${group} 區</span>
+        </div>
+        <table class="standings-table"><thead><tr><th>#</th><th class="left">球隊</th><th>勝</th><th>負</th><th>勝率</th></tr></thead><tbody>${tableRows}</tbody></table>
+        ${gameLog?`<div class="r2-game-log">${gameLog}</div>`:''}
+    </div>`;
+}
+
+// ── Semis ──
+function renderSemis(mc){
+    const po=ensurePlayoff();
+    if(!po.generated){ mc.innerHTML=`<div style="padding:40px;text-align:center;color:#4a5080">請先產生季後賽對戰組合</div>`; return; }
+    const stA=getR2Standings('A'), stB=getR2Standings('B');
+    // Semi 1: A1 vs B2 | Semi 2: A2 vs B1
+    const teams=[
+        { t1:stA[0], s1:'A區 第1', t2:stB[1], s2:'B區 第2', label:'四強 第1場' },
+        { t1:stA[1], s1:'A區 第2', t2:stB[0], s2:'B區 第1', label:'四強 第2場' },
+    ];
+    let cards='';
+    teams.forEach((spec,i)=>{
+        const m=po.semis[i]||{score1:null,score2:null,team1Id:null,team2Id:null};
+        const t1id=spec.t1?.id||null, t2id=spec.t2?.id||null;
+        const hasScore=m.score1!==null&&m.score2!==null;
+        const noTeams=!t1id&&!t2id;
+        const w1=hasScore&&m.score1>m.score2, w2=hasScore&&m.score2>m.score1;
+        cards+=`<div class="matchup-card${hasScore?' played':''}${noTeams?' no-teams':''}" onclick="${noTeams?'':`openMatchupModal('semi',${i})`}">
+            <div class="matchup-side">
+                <div class="match-seed">${spec.s1}</div>
+                <div class="match-team${!t1id?' pending':w1?' winner':w2?' loser':''}">${t1id?escHtml(spec.t1.rawName||'?'):'待定'}</div>
+            </div>
+            <div class="match-center">
+                <div class="match-score${!hasScore?' pending':''}">${hasScore?`${m.score1} : ${m.score2}`:'－ : －'}</div>
+                <div class="match-label">${spec.label}</div>
+            </div>
+            <div class="matchup-side">
+                <div class="match-seed">${spec.s2}</div>
+                <div class="match-team${!t2id?' pending':w2?' winner':w1?' loser':''}">${t2id?escHtml(spec.t2.rawName||'?'):'待定'}</div>
+            </div>
+        </div>`;
+    });
+    mc.innerHTML=`<div class="division-section" style="grid-column:1/-1"><div class="matchup-section-title">四強 ── 點擊場次可輸入成績</div><div class="matchup-grid">${cards}</div></div>`;
+}
+
+// ── Finals ──
+function renderFinals(mc){
+    const po=ensurePlayoff();
+    if(!po.generated){ mc.innerHTML=`<div style="padding:40px;text-align:center;color:#4a5080">請先產生季後賽對戰組合</div>`; return; }
+    const stA=getR2Standings('A'), stB=getR2Standings('B');
+    // Semi 1: A1 vs B2 → winner, Semi 2: A2 vs B1 → winner
+    const s1=po.semis[0], s2=po.semis[1];
+    const s1t1=stA[0]?.id||null, s1t2=stB[1]?.id||null;
+    const s2t1=stA[1]?.id||null, s2t2=stB[0]?.id||null;
+    // Determine semi winners
+    let fin1id=null, fin2id=null, fin1seed='四強第1場勝者', fin2seed='四強第2場勝者';
+    if(s1&&s1.score1!==null&&s1.score2!==null){
+        fin1id=s1.score1>s1.score2?s1.team1Id:s1.team2Id;
+    }
+    if(s2&&s2.score1!==null&&s2.score2!==null){
+        fin2id=s2.score1>s2.score2?s2.team1Id:s2.team2Id;
+    }
+    const m=po.finals||{score1:null,score2:null};
+    const hasScore=m.score1!==null&&m.score2!==null;
+    const noTeams=!fin1id&&!fin2id;
+    const w1=hasScore&&m.score1>m.score2, w2=hasScore&&m.score2>m.score1;
+    const card=`<div class="matchup-card${hasScore?' played':''}${noTeams?' no-teams':''}" onclick="${noTeams?'':''}" style="${!noTeams?'cursor:pointer':''}" ${!noTeams?`onclick="openMatchupModal('finals',0)"`:''}>
+        <div class="matchup-side">
+            <div class="match-seed">${fin1seed}</div>
+            <div class="match-team${!fin1id?' pending':w1?' winner':w2?' loser':''}">${fin1id?escHtml(getTeam(fin1id)?.name||'?'):'待定'}</div>
+        </div>
+        <div class="match-center">
+            <div class="match-score${!hasScore?' pending':''}" style="font-size:1.5rem">${hasScore?`${m.score1} : ${m.score2}`:'－ : －'}</div>
+            <div class="match-label">冠軍賽</div>
+        </div>
+        <div class="matchup-side">
+            <div class="match-seed">${fin2seed}</div>
+            <div class="match-team${!fin2id?' pending':w2?' winner':w1?' loser':''}">${fin2id?escHtml(getTeam(fin2id)?.name||'?'):'待定'}</div>
+        </div>
+    </div>`;
+    mc.innerHTML=`<div style="grid-column:1/-1"><div class="division-section"><div class="matchup-section-title">冠軍賽 ── 點擊場次可輸入成績</div><div class="finals-wrap">${card}</div></div></div>`;
+}
+
+// ── Game Log ──
+function renderGameLog(){
+    const body=document.getElementById('game-log-body');
+    const countEl=document.getElementById('game-count-label');
+    if(!body) return;
+    const games=season().games;
+    if(countEl) countEl.textContent=`${state.currentSeason} 賽季　共 ${games.length} 場`;
+    if(!games.length){ body.innerHTML='<div class="empty-state" style="padding:20px"><div class="empty-title">尚無比賽紀錄</div></div>'; return; }
+    const dn={east:'東區',west:'西區'};
+    let h='';
+    for(const g of [...games].reverse()){
+        const t1=getTeam(g.team1Id),t2=getTeam(g.team2Id);
+        const n1=t1?escHtml(t1.name):'?', n2=t2?escHtml(t2.name):'?';
+        const w1=g.score1>g.score2;
+        const date=g.date?new Date(g.date).toLocaleDateString('zh-TW'):'';
+        h+=`<div class="game-item"><div class="game-item-left"><span class="game-div-tag">${dn[g.division]}</span>${date?`<span style="color:#4a5080;font-size:.78rem">${date}</span>`:''}<span class="g-team ${w1?'winner':'loser'}">${n1}</span><span class="g-score">${g.score1} : ${g.score2}</span><span class="g-team ${!w1?'winner':'loser'}">${n2}</span></div><button class="btn btn-danger btn-sm" onclick="deleteGame('${g.id}')">刪除</button></div>`;
+    }
+    body.innerHTML=h;
+}
+
+// ============================================================
+//  MODAL CONTROL
+// ============================================================
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+
+function openAddTeamModal(div){
+    addingDivision=div;
+    document.getElementById('add-team-div-label').textContent=`${state.currentSeason} 賽季　${div==='east'?'東區':'西區'}`;
+    document.getElementById('team-name-input').value='';
+    document.getElementById('add-team-error').textContent='';
+    document.getElementById('add-team-modal').classList.add('active');
+    setTimeout(()=>document.getElementById('team-name-input').focus(),80);
+}
+
+function openRecordGameModal(){
+    const s=season(); const eo=s.divisions.east.length>=2, wo=s.divisions.west.length>=2;
+    if(!eo&&!wo){ alert('請先為至少一個分區新增至少兩支球隊。'); return; }
+    const divSel=document.getElementById('game-division');
+    divSel.value=eo?'east':'west';
+    Array.from(divSel.options).forEach(opt=>{ opt.disabled=s.divisions[opt.value].length<2; });
+    document.getElementById('record-game-error').textContent='';
+    document.getElementById('score1').value=''; document.getElementById('score2').value='';
+    onDivisionChange();
+    document.getElementById('record-game-modal').classList.add('active');
+}
+
+function onDivisionChange(){
+    const div=document.getElementById('game-division').value;
+    const teams=season().divisions[div];
+    document.getElementById('game-team1').innerHTML=teams.map(t=>`<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
+    refreshTeam2();
+}
+function refreshTeam2(){
+    const div=document.getElementById('game-division').value;
+    const t1=document.getElementById('game-team1').value;
+    document.getElementById('game-team2').innerHTML=season().divisions[div].filter(t=>t.id!==t1).map(t=>`<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
+}
+
+// Playoff Matchup Modal
+function openMatchupModal(type, index){
+    const po=ensurePlayoff();
+    let t1id=null,t2id=null,seed1='',seed2='',title='',existScore1=null,existScore2=null;
+
+    if(type==='r1'){
+        const m=po.round1[index];
+        t1id=m.team1Id; t2id=m.team2Id; seed1=m.team1Seed; seed2=m.team2Seed;
+        existScore1=m.score1; existScore2=m.score2;
+        title=`第一輪 ── 第${index+1}場`;
+    } else if(type==='semi'){
+        const stA=getR2Standings('A'),stB=getR2Standings('B');
+        if(index===0){ t1id=stA[0]?.id||null; t2id=stB[1]?.id||null; seed1='A區 第1'; seed2='B區 第2'; }
+        else{ t1id=stA[1]?.id||null; t2id=stB[0]?.id||null; seed1='A區 第2'; seed2='B區 第1'; }
+        const m=po.semis[index];
+        existScore1=m?.score1??null; existScore2=m?.score2??null;
+        title=`四強 ── 第${index+1}場`;
+    } else if(type==='finals'){
+        const s1=po.semis[0],s2=po.semis[1];
+        t1id=s1&&s1.score1!==null?(s1.score1>s1.score2?s1.team1Id:s1.team2Id):null;
+        t2id=s2&&s2.score1!==null?(s2.score1>s2.score2?s2.team1Id:s2.team2Id):null;
+        seed1='四強第1場勝者'; seed2='四強第2場勝者';
+        existScore1=po.finals?.score1??null; existScore2=po.finals?.score2??null;
+        title='冠軍賽';
+    }
+
+    if(!t1id&&!t2id){ alert('對戰隊伍尚未決定，請先完成前一輪賽事。'); return; }
+
+    mmCtx={ type, index, team1Id:t1id, team2Id:t2id, seed1, seed2 };
+    document.getElementById('mm-title').textContent=title;
+    document.getElementById('mm-seed1').textContent=seed1;
+    document.getElementById('mm-name1').textContent=t1id?(getTeam(t1id)?.name||'?'):'待定';
+    document.getElementById('mm-name1').className='mm-name'+(t1id?'':' pending');
+    document.getElementById('mm-seed2').textContent=seed2;
+    document.getElementById('mm-name2').textContent=t2id?(getTeam(t2id)?.name||'?'):'待定';
+    document.getElementById('mm-name2').className='mm-name'+(t2id?'':' pending');
+    document.getElementById('mm-score1').value=existScore1!==null?existScore1:'';
+    document.getElementById('mm-score2').value=existScore2!==null?existScore2:'';
+    document.getElementById('mm-error').textContent='';
+    document.getElementById('matchup-modal').classList.add('active');
+    setTimeout(()=>document.getElementById('mm-score1').focus(),80);
+}
+
+function openR2GameModal(group){
+    r2CurrentGroup=group;
+    const teamIds=getR2TeamIds(group).filter(id=>id!==null);
+    if(teamIds.length<2){ alert(`${group}區隊伍尚未決定（請先完成第一輪賽事）`); return; }
+    document.getElementById('r2-modal-title').textContent=`輸入第二輪成績 ── ${group}區`;
+    document.getElementById('r2-error').textContent='';
+    document.getElementById('r2-score1').value=''; document.getElementById('r2-score2').value='';
+    document.getElementById('r2-team1').innerHTML=teamIds.map(id=>`<option value="${id}">${escHtml(getTeam(id)?.name||'?')}</option>`).join('');
+    r2RefreshTeam2();
+    document.getElementById('r2-game-modal').classList.add('active');
+}
+function r2RefreshTeam2(){
+    const teamIds=getR2TeamIds(r2CurrentGroup).filter(id=>id!==null);
+    const t1=document.getElementById('r2-team1').value;
+    document.getElementById('r2-team2').innerHTML=teamIds.filter(id=>id!==t1).map(id=>`<option value="${id}">${escHtml(getTeam(id)?.name||'?')}</option>`).join('');
+}
+
+// ============================================================
+//  ACTIONS
+// ============================================================
+function setMode(m){ view.mode=m; renderAll(); }
+function setRound(r){ view.round=r; renderAll(); }
+
+function addTeam(){
+    const name=document.getElementById('team-name-input').value.trim();
+    const err=document.getElementById('add-team-error');
+    if(!name){ err.textContent='請輸入球隊名稱'; return; }
+    if(season().divisions[addingDivision].some(t=>t.name===name)){ err.textContent='此球隊名稱已存在'; return; }
+    season().divisions[addingDivision].push({id:genId(),name});
+    saveState(); closeModal('add-team-modal'); renderAll();
+}
+
+function recordGame(){
+    const division=document.getElementById('game-division').value;
+    const t1=document.getElementById('game-team1').value, t2=document.getElementById('game-team2').value;
+    const s1r=document.getElementById('score1').value, s2r=document.getElementById('score2').value;
+    const err=document.getElementById('record-game-error');
+    if(!t1||!t2){ err.textContent='請確認已選擇兩支球隊'; return; }
+    if(t1===t2){ err.textContent='不能選擇相同球隊'; return; }
+    if(s1r===''||s2r===''){ err.textContent='請輸入雙方比分'; return; }
+    const score1=parseInt(s1r),score2=parseInt(s2r);
+    if(isNaN(score1)||isNaN(score2)||score1<0||score2<0){ err.textContent='請輸入有效的分數'; return; }
+    if(score1===score2){ err.textContent='籃球沒有平局，比分不可相同'; return; }
+    season().games.push({id:genId(),division,team1Id:t1,team2Id:t2,score1,score2,date:new Date().toISOString()});
+    saveState(); closeModal('record-game-modal'); renderAll();
+}
+
+function deleteGame(id){
+    if(!confirm('確定要刪除此場比賽紀錄？')) return;
+    season().games=season().games.filter(g=>g.id!==id);
+    saveState(); renderAll();
+}
+
+function toggleGameLog(){
+    gameLogVisible=!gameLogVisible;
+    renderAll();
+}
+
+// Generate playoff bracket from regular season standings
+function generateBracket(){
+    const east=getStandings('east').slice(0,8);
+    const west=getStandings('west').slice(0,8);
+    const po=ensurePlayoff();
+    if(po.generated&&!confirm('確定要重新產生季後賽對戰組合？這將清除現有的季後賽資料。')) return;
+    // Reset
+    po.generated=false; po.round1=[];
+    po.round2={ A:{ games:[] }, B:{ games:[] } };
+    po.semis=[null,null]; po.finals=null;
+    // Create 8 matchups
+    for(let i=0;i<8;i++){
+        const e=east[i]||null, w=west[7-i]||null;
+        po.round1.push({ id:genId(), team1Id:e?e.id:null, team1Seed:`東${i+1}`, team2Id:w?w.id:null, team2Seed:`西${8-i}`, score1:null, score2:null });
+    }
+    po.generated=true;
+    saveState();
+    view.mode='playoff'; view.round='round1';
+    renderAll();
+}
+
+function submitMatchupScore(){
+    if(!mmCtx){ closeModal('matchup-modal'); return; }
+    const s1r=document.getElementById('mm-score1').value, s2r=document.getElementById('mm-score2').value;
+    const err=document.getElementById('mm-error');
+    if(s1r===''||s2r===''){ err.textContent='請輸入雙方比分'; return; }
+    const score1=parseInt(s1r),score2=parseInt(s2r);
+    if(isNaN(score1)||isNaN(score2)||score1<0||score2<0){ err.textContent='請輸入有效的分數'; return; }
+    if(score1===score2){ err.textContent='籃球沒有平局，比分不可相同'; return; }
+    const po=ensurePlayoff();
+    if(mmCtx.type==='r1'){
+        po.round1[mmCtx.index].score1=score1; po.round1[mmCtx.index].score2=score2;
+    } else if(mmCtx.type==='semi'){
+        po.semis[mmCtx.index]={ team1Id:mmCtx.team1Id, team2Id:mmCtx.team2Id, score1, score2 };
+    } else if(mmCtx.type==='finals'){
+        po.finals={ team1Id:mmCtx.team1Id, team2Id:mmCtx.team2Id, score1, score2 };
+    }
+    saveState(); closeModal('matchup-modal'); renderAll();
+}
+
+function submitR2Game(){
+    const t1=document.getElementById('r2-team1').value, t2=document.getElementById('r2-team2').value;
+    const s1r=document.getElementById('r2-score1').value, s2r=document.getElementById('r2-score2').value;
+    const err=document.getElementById('r2-error');
+    if(!t1||!t2){ err.textContent='請確認已選擇兩支球隊'; return; }
+    if(t1===t2){ err.textContent='不能選擇相同球隊'; return; }
+    if(s1r===''||s2r===''){ err.textContent='請輸入雙方比分'; return; }
+    const score1=parseInt(s1r),score2=parseInt(s2r);
+    if(isNaN(score1)||isNaN(score2)||score1<0||score2<0){ err.textContent='請輸入有效的分數'; return; }
+    if(score1===score2){ err.textContent='籃球沒有平局，比分不可相同'; return; }
+    const po=ensurePlayoff();
+    po.round2[r2CurrentGroup].games.push({id:genId(),team1Id:t1,team2Id:t2,score1,score2,date:new Date().toISOString()});
+    saveState(); closeModal('r2-game-modal'); renderAll();
+}
+
+function deleteR2Game(group,id){
+    if(!confirm('確定要刪除此場比賽紀錄？')) return;
+    const po=ensurePlayoff();
+    po.round2[group].games=po.round2[group].games.filter(g=>g.id!==id);
+    saveState(); renderAll();
+}
+
+// ============================================================
+//  EVENTS
+// ============================================================
+document.querySelectorAll('.modal-overlay').forEach(el=>{ el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('active'); }); });
+document.getElementById('team-name-input').addEventListener('keydown',e=>{ if(e.key==='Enter') addTeam(); });
+document.getElementById('season-name-input').addEventListener('keydown',e=>{ if(e.key==='Enter') addSeason(); });
+document.getElementById('mm-score1').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('mm-score2').focus(); });
+document.getElementById('mm-score2').addEventListener('keydown',e=>{ if(e.key==='Enter') submitMatchupScore(); });
+
+// ============================================================
+//  SHARE
+// ============================================================
+function openShareModal(){
+    document.getElementById('share-modal').classList.add('active');
+}
+
+function exportViewerHtml(){
+    const btn = document.querySelector('#share-modal .btn-primary');
+    btn.textContent = '產生中…'; btn.disabled = true;
+
+    try {
+        // Read viewer template embedded in this page (no fetch needed - works with file://)
+        let html = document.getElementById('viewer-tpl').textContent;
+
+        // Safely encode state data (escape script-closing tags inside JSON strings)
+        const safeData = JSON.stringify(state).replace(/<\/script>/gi, '<\\/script>');
+
+        // Inject baked state right after <head> — always present, no placeholder needed
+        html = html.replace('<head>', '<head><script>window.__bakedState=' + safeData + ';<\/script>');
+
+        // Restore the closing script tag from placeholder
+        html = html.replace('VIEWER_SCRIPT_END', '<\/script>');
+
+        const blob = new Blob([html], { type: 'application/octet-stream' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const d = new Date();
+        const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+        a.download = '聯盟賽戰績_' + state.currentSeason + '_' + stamp + '.htm';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+
+        btn.textContent = '已下載！'; btn.disabled = false;
+        setTimeout(()=>{ btn.textContent = '產生球員版網頁'; }, 2000);
+    } catch(e) {
+        alert('產生失敗：' + e.message);
+        btn.textContent = '產生球員版網頁'; btn.disabled = false;
+    }
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+loadState();
+renderAll();
+</script>
+</body>
+</html>
